@@ -127,7 +127,8 @@ body {
 }
 
 .certificate-carousel {
-  --certificate-card-width: calc((100% - 7.5rem) / 4);
+  --certificate-gap: 2rem;
+  --certificate-card-width: calc((100% - (var(--certificate-gap) * 3)) / 4);
   position: relative;
   overflow: hidden;
   padding: 1.5rem 0.25rem 0.25rem;
@@ -137,13 +138,13 @@ body {
   display: grid;
   grid-auto-columns: var(--certificate-card-width);
   grid-auto-flow: column;
+  gap: var(--certificate-gap);
   width: 100%;
 }
 
 .certificate-card {
   width: 100%;
   min-width: 0;
-  margin-right: 2.5rem;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 1rem;
@@ -286,11 +287,8 @@ body {
 
 @media (max-width: 767px) {
   .certificate-carousel {
-    --certificate-card-width: 100%;
-  }
-
-  .certificate-card {
-    margin-right: 1.25rem;
+    --certificate-gap: 1rem;
+    --certificate-card-width: calc(100% - var(--certificate-gap));
   }
 
   .certificate-carousel__control {

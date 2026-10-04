@@ -15,24 +15,27 @@ function getCertificateImage(url: string) {
 }
 
 function getVisibleCardCount() {
-  return typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches ? 1 : 3;
+  return typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches ? 1 : 4;
 }
 
 export function AchievementsCertificates() {
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(PORTFOLIO_DATA.certificates.length);
   const [selectedCertificate, setSelectedCertificate] = useState<number | null>(null);
   const [isPaused, setIsPaused] = useState(false);
+  const [proofIndex, setProofIndex] = useState(PORTFOLIO_DATA.achievementProofs.length);
+  const [isProofPaused, setIsProofPaused] = useState(false);
   const [visibleCardCount, setVisibleCardCount] = useState(getVisibleCardCount);
 
   const certificates = PORTFOLIO_DATA.certificates;
-  const maxIndex = Math.max(0, certificates.length - visibleCardCount);
+  const loopedCertificates = [...certificates, ...certificates, ...certificates];
+  const proofs = PORTFOLIO_DATA.achievementProofs;
+  const loopedProofs = [...proofs, ...proofs, ...proofs];
   const selected = selectedCertificate === null ? null : certificates[selectedCertificate];
 
   useEffect(() => {
     const updateVisibleCardCount = () => {
       const nextCount = getVisibleCardCount();
       setVisibleCardCount(nextCount);
-      setActiveIndex((index) => Math.min(index, Math.max(0, certificates.length - nextCount)));
     };
 
     window.addEventListener("resize", updateVisibleCardCount);
@@ -43,11 +46,21 @@ export function AchievementsCertificates() {
     if (isPaused || selectedCertificate !== null) return;
 
     const timer = window.setInterval(() => {
-      setActiveIndex((index) => (index >= maxIndex ? 0 : index + 1));
+      setActiveIndex((index) => index + 1);
     }, AUTO_PLAY_MS);
 
     return () => window.clearInterval(timer);
-  }, [isPaused, selectedCertificate, maxIndex]);
+  }, [isPaused, selectedCertificate]);
+
+  useEffect(() => {
+    if (isProofPaused) return;
+
+    const timer = window.setInterval(() => {
+      setProofIndex((index) => index + 1);
+    }, AUTO_PLAY_MS + 500);
+
+    return () => window.clearInterval(timer);
+  }, [isProofPaused]);
 
   useEffect(() => {
     if (selectedCertificate === null) return;
@@ -66,7 +79,7 @@ export function AchievementsCertificates() {
   }, [selectedCertificate]);
 
   const moveCarousel = (direction: number) => {
-    setActiveIndex((index) => Math.min(maxIndex, Math.max(0, index + direction)));
+    setActiveIndex((index) => index + direction);
   };
 
   return (
@@ -114,12 +127,17 @@ export function AchievementsCertificates() {
               className="certificate-carousel__track"
               animate={{ x: `${-(activeIndex * (100 / visibleCardCount))}%` }}
               transition={{ type: "spring", stiffness: 180, damping: 24, mass: 0.9 }}
+              onAnimationComplete={() => {
+                if (activeIndex >= certificates.length * 2 || activeIndex <= 0) {
+                  setActiveIndex(certificates.length);
+                }
+              }}
             >
-              {certificates.map((cert, index) => (
+              {loopedCertificates.map((cert, index) => (
                 <motion.button
-                key={`${cert.title}-${cert.date}`}
+                  key={`${cert.title}-${cert.date}-${index}`}
                   type="button"
-                  onClick={() => setSelectedCertificate(index)}
+                  onClick={() => setSelectedCertificate(index % certificates.length)}
                   variants={staggerItem}
                   whileHover={{ y: -6 }}
                   data-cursor="open"
@@ -137,7 +155,7 @@ export function AchievementsCertificates() {
 
                   <div className="p-4 text-left">
                     <div className="mb-2 flex items-center justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.18em] text-neutral-500">
-                      <span className="text-cyan-400">{String(index + 1).padStart(2, "0")} / 08</span>
+                      <span className="text-cyan-400">{String((index % certificates.length) + 1).padStart(2, "0")} / 08</span>
                       <span>{cert.date}</span>
                     </div>
                     <h3 className="line-clamp-2 text-sm font-semibold uppercase tracking-tight text-white">
@@ -169,14 +187,14 @@ export function AchievementsCertificates() {
             </button>
 
             <div className="mt-6 flex justify-center gap-2" aria-label="Certificate carousel navigation">
-              {Array.from({ length: maxIndex + 1 }, (_, index) => (
+              {certificates.map((cert, index) => (
                 <button
                   type="button"
-                  key={index}
-                  onClick={() => setActiveIndex(index)}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${index === activeIndex ? "w-8 bg-cyan-400" : "w-1.5 bg-white/25 hover:bg-white/60"}`}
+                  key={cert.title}
+                  onClick={() => setActiveIndex(certificates.length + index)}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${index === activeIndex % certificates.length ? "w-8 bg-cyan-400" : "w-1.5 bg-white/25 hover:bg-white/60"}`}
                   aria-label={`Show certificate ${index + 1}`}
-                  aria-current={index === activeIndex ? "true" : undefined}
+                  aria-current={index === activeIndex % certificates.length ? "true" : undefined}
                 />
               ))}
             </div>
@@ -193,29 +211,83 @@ export function AchievementsCertificates() {
             </span>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-3">
-            {PORTFOLIO_DATA.achievementProofs.map((item, index) => (
-              <motion.a
-                key={`${item.title}-${index}`}
-                href={item.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                whileHover={{ scale: 1.01, y: -2 }}
-                data-cursor="open"
-                className="group flex items-center justify-between gap-3 rounded-xl border border-white/[0.08] bg-[#0b0b0b] px-4 py-3 text-left transition-all duration-300 hover:border-cyan-400/40 hover:bg-[#101010] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#080808]"
-                aria-label={`View achievement proof for ${item.title}`}
-              >
-                <div className="min-w-0">
-                  <div className="font-mono text-[9px] uppercase tracking-[0.26em] text-neutral-500">
-                    {item.date}
+          <div
+            className="certificate-carousel"
+            onMouseEnter={() => setIsProofPaused(true)}
+            onMouseLeave={() => setIsProofPaused(false)}
+            onFocus={() => setIsProofPaused(true)}
+            onBlur={() => setIsProofPaused(false)}
+          >
+            <motion.div
+              className="certificate-carousel__track"
+              animate={{ x: `${-(proofIndex * (100 / visibleCardCount))}%` }}
+              transition={{ type: "spring", stiffness: 180, damping: 24, mass: 0.9 }}
+              onAnimationComplete={() => {
+                if (proofIndex >= proofs.length * 2 || proofIndex <= 0) {
+                  setProofIndex(proofs.length);
+                }
+              }}
+            >
+              {loopedProofs.map((item, index) => (
+                <motion.a
+                  key={`${item.title}-${index}`}
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  whileHover={{ y: -6 }}
+                  data-cursor="open"
+                  className="certificate-card group"
+                  aria-label={`View achievement proof for ${item.title}`}
+                >
+                  <div className="certificate-card__image-wrap">
+                    <img
+                      src={getCertificateImage(item.url)}
+                      alt={`${item.title} proof preview`}
+                      className="certificate-card__image"
+                    />
+                    <span className="certificate-card__overlay">OPEN PROOF <ArrowUpRight className="inline h-3.5 w-3.5" /></span>
                   </div>
-                  <div className="mt-2 text-sm font-semibold uppercase tracking-tight text-white">
-                    {item.title}
+                  <div className="p-4 text-left">
+                    <div className="mb-2 flex items-center justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.18em] text-neutral-500">
+                      <span className="text-cyan-400">{String((index % proofs.length) + 1).padStart(2, "0")} / {String(proofs.length).padStart(2, "0")}</span>
+                      <span>{item.date}</span>
+                    </div>
+                    <h3 className="line-clamp-2 text-sm font-semibold uppercase tracking-tight text-white">{item.title}</h3>
+                    <p className="mt-2 truncate font-mono text-[10px] uppercase tracking-[0.18em] text-neutral-500">{item.issuer}</p>
                   </div>
-                </div>
-                <ArrowUpRight className="h-4 w-4 shrink-0 text-cyan-300 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-              </motion.a>
-            ))}
+                </motion.a>
+              ))}
+            </motion.div>
+
+            <button
+              type="button"
+              onClick={() => setProofIndex((index) => index - 1)}
+              className="certificate-carousel__control certificate-carousel__control--left"
+              aria-label="Previous achievement proof"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setProofIndex((index) => index + 1)}
+              className="certificate-carousel__control certificate-carousel__control--right"
+              aria-label="Next achievement proof"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+
+            <div className="mt-6 flex justify-center gap-2" aria-label="Achievement proof carousel navigation">
+              {proofs.map((item, index) => (
+                <button
+                  type="button"
+                  key={item.title}
+                  onClick={() => setProofIndex(proofs.length + index)}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${index === proofIndex % proofs.length ? "w-8 bg-cyan-400" : "w-1.5 bg-white/25 hover:bg-white/60"}`}
+                  aria-label={`Show achievement proof ${index + 1}`}
+                  aria-current={index === proofIndex % proofs.length ? "true" : undefined}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>
