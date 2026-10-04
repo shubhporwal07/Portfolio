@@ -7,7 +7,7 @@ import { PORTFOLIO_DATA } from "@/data/portfolio";
 import { fadeUp, staggerItem } from "@/lib/animations";
 import { ArrowUpRight, ChevronLeft, ChevronRight, ExternalLink, X } from "lucide-react";
 
-const AUTO_PLAY_MS = 4200;
+const AUTO_PLAY_MS = 3000;
 
 function getCertificateImage(url: string) {
   const fileId = url.match(/\/d\/([^/]+)/)?.[1];
@@ -113,7 +113,7 @@ export function AchievementsCertificates() {
             <motion.div
               className="certificate-carousel__track"
               animate={{ x: `${-(activeIndex * (100 / visibleCardCount))}%` }}
-              transition={{ type: "spring", stiffness: 260, damping: 30 }}
+              transition={{ type: "spring", stiffness: 180, damping: 24, mass: 0.9 }}
             >
               {certificates.map((cert, index) => (
                 <motion.button
