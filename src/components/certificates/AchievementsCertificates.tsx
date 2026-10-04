@@ -11,7 +11,7 @@ const AUTO_PLAY_MS = 4200;
 
 function getCertificateImage(url: string) {
   const fileId = url.match(/\/d\/([^/]+)/)?.[1];
-  return fileId ? `https://drive.google.com/thumbnail?id=${fileId}&sz=w1600` : url;
+  return fileId ? `https://lh3.googleusercontent.com/d/${fileId}=w1600` : url;
 }
 
 function getVisibleCardCount() {
@@ -112,7 +112,7 @@ export function AchievementsCertificates() {
           >
             <motion.div
               className="certificate-carousel__track"
-              animate={{ x: `calc(-${activeIndex} * (var(--certificate-card-width) + 1rem))` }}
+              animate={{ x: `${-(activeIndex * (100 / visibleCardCount))}%` }}
               transition={{ type: "spring", stiffness: 260, damping: 30 }}
             >
               {certificates.map((cert, index) => (
